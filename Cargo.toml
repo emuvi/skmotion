@@ -1,0 +1,13 @@
+[package]
+name = "skmotion"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.18"
+quest = "0.3"
+serde = { version = "1", features = ["derive"] }
+scrap = "0.5"
+webm = "1"
+vpx-encode = { version = "0.6", features = ["vp9"] }
+env-libvpx-sys = "5"
