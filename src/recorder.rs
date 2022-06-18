@@ -35,27 +35,11 @@ pub fn record(likes: Likes) -> io::Result<()> {
 
     // Setup the multiplexer.
 
-    let out = match {
-        OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&likes.destiny)
-    } {
-        Ok(file) => file,
-        Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => {
-            if loop {
-                quest::ask("Overwrite the existing file? [y/N] ");
-                if let Some(b) = quest::yesno(false)? {
-                    break b;
-                }
-            } {
-                File::create(&likes.destiny)?
-            } else {
-                return Ok(());
-            }
-        }
-        Err(e) => return Err(e.into()),
-    };
+    let out = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(&likes.destiny)
+        .unwrap();
 
     let mut webm =
         mux::Segment::new(mux::Writer::new(out)).expect("Could not initialize the multiplexer.");
