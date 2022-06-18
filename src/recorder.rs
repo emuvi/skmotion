@@ -24,6 +24,8 @@ pub fn start(
     duration: Option<u64>,
     sensitivity: f64,
     resilience: u32,
+    frames_ps: u64,
+    bitrate: u32,
     destiny: &str,
 ) -> std::io::Result<()> {
     record(Likes {
@@ -31,8 +33,8 @@ pub fn start(
         duration,
         sensitivity,
         resilience,
-        frames_ps: 30,
-        bitrate: 5000,
+        frames_ps,
+        bitrate,
         destiny: destiny.into(),
     })
 }

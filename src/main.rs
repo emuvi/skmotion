@@ -33,11 +33,27 @@ fn main() -> std::io::Result<()> {
     if let Some(resilience_arg) = args.value_of("resilience") {
         resilience = resilience_arg.parse::<u32>().unwrap();
     }
+    let mut frames_ps: u64 = 30;
+    if let Some(frames_ps_arg) = args.value_of("frames_ps") {
+        frames_ps = frames_ps_arg.parse::<u64>().unwrap();
+    }
+    let mut bitrate: u32 = 10000;
+    if let Some(bitrate_arg) = args.value_of("bitrate") {
+        bitrate = bitrate_arg.parse::<u32>().unwrap();
+    }
     if args.is_present("record") {
         let destiny = args
             .value_of("record")
             .expect("Could not parse the record PATH argument.");
-        return recorder::start(display, duration, sensitivity, resilience, destiny);
+        return recorder::start(
+            display,
+            duration,
+            sensitivity,
+            resilience,
+            frames_ps,
+            bitrate,
+            destiny,
+        );
     }
     Ok(())
 }

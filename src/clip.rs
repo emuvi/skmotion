@@ -50,6 +50,24 @@ pub fn parse() -> ArgMatches {
 				.help("How many frames to record even without motion."),
 		)
 		.arg(
+			Arg::new("frames_ps")
+				.short('f')
+				.long("frames_ps")
+				.value_name("FRAMES_PER_SECOND")
+				.takes_value(true)
+				.required(false)
+				.help("How many frames per second to record."),
+		)
+		.arg(
+			Arg::new("bitrate")
+				.short('b')
+				.long("bitrate")
+				.value_name("TARGET")
+				.takes_value(true)
+				.required(false)
+				.help("The target bitrate (in kilobits per second) to record."),
+		)
+		.arg(
 			Arg::new("record")
 				.short('r')
 				.long("record")
