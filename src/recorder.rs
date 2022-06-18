@@ -87,7 +87,6 @@ fn record(like: Like) -> std::io::Result<()> {
     let last_diff = Arc::new(AtomicF64::new(0.0));
     let frames_saved = Arc::new(AtomicU64::new(0));
     let frames_skipped = Arc::new(AtomicU64::new(0));
-    let start = Instant::now();
     let pause = Arc::new(AtomicBool::new(false));
     let stop = Arc::new(AtomicBool::new(false));
 
@@ -126,7 +125,9 @@ fn record(like: Like) -> std::io::Result<()> {
         }
     });
 
-    let spf = Duration::from_nanos(1_000_000_000 / like.frames_ps);
+    let nanos_time_base = 1_000_000_000 / like.frames_ps;
+    let base_multiplier = std::cmp::max(like.frames_ps / 10, 1);
+    let capture_interval = Duration::from_nanos(nanos_time_base);
     let mut last_saved = Vec::new();
     let mut yuv = Vec::new();
 
@@ -134,15 +135,17 @@ fn record(like: Like) -> std::io::Result<()> {
 
     while !stop.load(Ordering::Acquire) {
         if pause.load(Ordering::Acquire) {
-            std::thread::sleep(Duration::from_millis(10));
+            std::thread::sleep(Duration::from_millis(1));
             continue;
         }
-        let now = Instant::now();
-        let time = now - start;
-        if Some(true) == duration.map(|d| time > d) {
+        let start_cycle = Instant::now();
+        let frame_index = frames_saved.load(Ordering::Acquire);
+        let frame_time = Duration::from_nanos(base_multiplier * nanos_time_base * frame_index);
+        if Some(true) == duration.map(|d| frame_time > d) {
             break;
         }
 
+        let mut was_block = false;
         match capturer.frame() {
             Ok(frame) => {
                 let diff = crate::helper::compare(&frame, &last_saved);
@@ -161,9 +164,9 @@ fn record(like: Like) -> std::io::Result<()> {
                     }
                 }
                 if to_save {
-                    let ms = time.as_secs() * 1000 + time.subsec_millis() as u64;
+                    let ms = frame_time.as_secs() * 1000 + frame_time.subsec_millis() as u64;
                     crate::helper::argb_to_i420(width as usize, height as usize, &frame, &mut yuv);
-                    for frame in vpx.encode(0 as i64, &yuv).unwrap() {
+                    for frame in vpx.encode(ms as i64, &yuv).unwrap() {
                         vt.add_frame(frame.data, frame.pts as u64 * 1_000_000, frame.key);
                     }
                     frames_saved.fetch_add(1, Ordering::AcqRel);
@@ -172,7 +175,7 @@ fn record(like: Like) -> std::io::Result<()> {
                 }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                // Wait.
+                was_block = true;
             }
             Err(e) => {
                 eprintln!("{}", e);
@@ -180,9 +183,11 @@ fn record(like: Like) -> std::io::Result<()> {
             }
         }
 
-        let dt = now.elapsed();
-        if dt < spf {
-            std::thread::sleep(spf - dt);
+        if !was_block {
+            let cycle_elapsed = start_cycle.elapsed();
+            if cycle_elapsed < capture_interval {
+                std::thread::sleep(capture_interval - cycle_elapsed);
+            }
         }
     }
 
