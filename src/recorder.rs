@@ -11,7 +11,6 @@ use webm::mux::Track;
 #[derive(Debug, serde::Deserialize)]
 pub struct Likes {
     pub display: usize,
-    pub resolution: Option<(u32, u32)>,
     pub sensitivity: f64,
     pub resilience: u32,
     pub duration: Option<u64>,
