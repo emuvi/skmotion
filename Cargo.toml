@@ -5,8 +5,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "3", features = ["cargo"] }
-quest = "0.3"
-serde = { version = "1", features = ["derive"] }
 scrap = "0.5"
 webm = "1"
 vpx-encode = { version = "0.6", features = ["vp9"] }

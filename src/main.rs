@@ -15,9 +15,9 @@ fn displays() -> std::io::Result<()> {
 fn record(display: usize, duration: Option<u64>, destiny: &str) -> std::io::Result<()> {
     let likes = recorder::Likes {
         display,
+        duration,
         sensitivity: 0.001,
         resilience: 27,
-        duration,
         frames_ps: 30,
         bitrate: 5000,
         destiny: destiny.into(),

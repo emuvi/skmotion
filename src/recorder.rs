@@ -1,25 +1,25 @@
 use scrap::{Capturer, Display};
 use std::fs::OpenOptions;
+use std::io::BufRead;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::{io, thread};
 use webm::mux;
 use webm::mux::Track;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug)]
 pub struct Likes {
     pub display: usize,
+    pub duration: Option<u64>,
     pub sensitivity: f64,
     pub resilience: u32,
-    pub duration: Option<u64>,
     pub frames_ps: u64,
     pub bitrate: u32,
     pub destiny: PathBuf,
 }
 
-pub fn record(likes: Likes) -> io::Result<()> {
+pub fn record(likes: Likes) -> std::io::Result<()> {
     let duration = likes.duration.map(Duration::from_secs);
 
     // Get the display.
@@ -65,19 +65,22 @@ pub fn record(likes: Likes) -> io::Result<()> {
     let pause = Arc::new(AtomicBool::new(false));
     let stop = Arc::new(AtomicBool::new(false));
 
-    thread::spawn({
+    std::thread::spawn({
         let pause = pause.clone();
         let stop = stop.clone();
-        move || loop {
-            let command = quest::text().unwrap();
-            let command = command.trim();
-            if command == "pause" {
-                pause.store(true, Ordering::Release);
-            } else if command == "continue" {
-                pause.store(false, Ordering::Release);
-            } else if command == "stop" {
-                stop.store(true, Ordering::Release);
-                break;
+        let stdin = std::io::stdin();
+        move || {
+            for line in stdin.lock().lines() {
+                let command = line.unwrap();
+                let command = command.trim();
+                if command == "pause" {
+                    pause.store(true, Ordering::Release);
+                } else if command == "continue" {
+                    pause.store(false, Ordering::Release);
+                } else if command == "stop" {
+                    stop.store(true, Ordering::Release);
+                    break;
+                }
             }
         }
     });
@@ -87,7 +90,7 @@ pub fn record(likes: Likes) -> io::Result<()> {
 
     while !stop.load(Ordering::Acquire) {
         if pause.load(Ordering::Acquire) {
-            thread::sleep(Duration::from_millis(10));
+            std::thread::sleep(Duration::from_millis(10));
             continue;
         }
         let now = Instant::now();
@@ -106,7 +109,7 @@ pub fn record(likes: Likes) -> io::Result<()> {
                     vt.add_frame(frame.data, frame.pts as u64 * 1_000_000, frame.key);
                 }
             }
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 // Wait.
             }
             Err(e) => {
@@ -117,7 +120,7 @@ pub fn record(likes: Likes) -> io::Result<()> {
 
         let dt = now.elapsed();
         if dt < spf {
-            thread::sleep(spf - dt);
+            std::thread::sleep(spf - dt);
         }
     }
 
