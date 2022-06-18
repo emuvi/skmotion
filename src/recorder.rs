@@ -63,14 +63,23 @@ pub fn record(likes: Likes) -> io::Result<()> {
     // Start recording.
 
     let start = Instant::now();
+    let pause = Arc::new(AtomicBool::new(false));
     let stop = Arc::new(AtomicBool::new(false));
 
     thread::spawn({
+        let pause = pause.clone();
         let stop = stop.clone();
-        move || {
-            let _ = quest::ask("Recording! Press ⏎ to stop.");
-            let _ = quest::text();
-            stop.store(true, Ordering::Release);
+        move || loop {
+            let command = quest::text().unwrap();
+            let command = command.trim();
+            if command == "pause" {
+                pause.store(true, Ordering::Release);
+            } else if command == "continue" {
+                pause.store(false, Ordering::Release);
+            } else if command == "stop" {
+                stop.store(true, Ordering::Release);
+                break;
+            }
         }
     });
 
@@ -78,9 +87,12 @@ pub fn record(likes: Likes) -> io::Result<()> {
     let mut yuv = Vec::new();
 
     while !stop.load(Ordering::Acquire) {
+        if pause.load(Ordering::Acquire) {
+            thread::sleep(Duration::from_millis(10));
+            continue;
+        }
         let now = Instant::now();
         let time = now - start;
-
         if Some(true) == duration.map(|d| time > d) {
             break;
         }
