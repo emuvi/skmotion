@@ -12,7 +12,7 @@ use std::time::{Duration, Instant};
 use crate::helper::AtomicF64;
 
 #[derive(Debug)]
-struct Likes {
+struct Like {
     display: usize,
     duration: Option<u64>,
     sensitivity: f64,
@@ -31,7 +31,7 @@ pub fn start(
     bitrate: u32,
     destiny: &str,
 ) -> std::io::Result<()> {
-    record(Likes {
+    record(Like {
         display,
         duration,
         sensitivity,
@@ -42,12 +42,12 @@ pub fn start(
     })
 }
 
-fn record(likes: Likes) -> std::io::Result<()> {
-    let duration = likes.duration.map(Duration::from_secs);
+fn record(like: Like) -> std::io::Result<()> {
+    let duration = like.duration.map(Duration::from_secs);
 
     // Get the display.
     let displays = Display::all()?;
-    let display = displays.into_iter().nth(likes.display).unwrap();
+    let display = displays.into_iter().nth(like.display).unwrap();
 
     // Setup the recorder.
 
@@ -60,7 +60,7 @@ fn record(likes: Likes) -> std::io::Result<()> {
     let out = OpenOptions::new()
         .write(true)
         .create(true)
-        .open(&likes.destiny)
+        .open(&like.destiny)
         .unwrap();
 
     let mut webm =
@@ -77,13 +77,13 @@ fn record(likes: Likes) -> std::io::Result<()> {
         width: width,
         height: height,
         timebase: [1, 1000],
-        bitrate: likes.bitrate,
+        bitrate: like.bitrate,
         codec: vpx_codec,
     })
     .unwrap();
 
     // Start recording.
-
+    let like = Arc::new(like);
     let last_diff = Arc::new(AtomicF64::new(0.0));
     let frames_saved = Arc::new(AtomicU64::new(0));
     let frames_skipped = Arc::new(AtomicU64::new(0));
@@ -92,6 +92,7 @@ fn record(likes: Likes) -> std::io::Result<()> {
     let stop = Arc::new(AtomicBool::new(false));
 
     std::thread::spawn({
+        let like = like.clone();
         let last_diff = last_diff.clone();
         let frames_saved = frames_saved.clone();
         let frames_skipped = frames_skipped.clone();
@@ -102,7 +103,9 @@ fn record(likes: Likes) -> std::io::Result<()> {
             for line in stdin.lock().lines() {
                 let command = line.unwrap();
                 let command = command.trim();
-                if command == "diff" {
+                if command == "like" {
+                    println!("{:?}", like);
+                } else if command == "diff" {
                     println!("{}", last_diff.load(Ordering::Acquire));
                 } else if command == "saved" {
                     println!("{}", frames_saved.load(Ordering::Acquire));
@@ -123,7 +126,7 @@ fn record(likes: Likes) -> std::io::Result<()> {
         }
     });
 
-    let spf = Duration::from_nanos(1_000_000_000 / likes.frames_ps);
+    let spf = Duration::from_nanos(1_000_000_000 / like.frames_ps);
     let mut last_saved = Vec::new();
     let mut yuv = Vec::new();
 
@@ -143,7 +146,7 @@ fn record(likes: Likes) -> std::io::Result<()> {
                 let ms = time.as_secs() * 1000 + time.subsec_millis() as u64;
                 let diff = crate::helper::compare(&frame, &last_saved);
                 last_diff.store(diff, Ordering::Release);
-                if diff > likes.sensitivity {
+                if diff > like.sensitivity {
                     last_saved.clear();
                     for f in frame.iter() {
                         last_saved.push(*f);
