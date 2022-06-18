@@ -9,24 +9,20 @@ use std::{io, thread};
 use webm::mux;
 use webm::mux::Track;
 
-pub struct ToRec {
-    pub screen: String,
-    pub resolution: (u32, u32),
+#[derive(Debug, serde::Deserialize)]
+pub struct Likes {
+    pub display: usize,
+    pub resolution: Option<(u32, u32)>,
     pub sensitivity: f64,
     pub resilience: u32,
+    pub duration: Option<u64>,
+    pub frames_ps: u64,
+    pub bitrate: u32,
     pub destiny: PathBuf,
 }
 
-#[derive(Debug, serde::Deserialize)]
-pub struct Args {
-    pub arg_path: PathBuf,
-    pub flag_time: Option<u64>,
-    pub flag_fps: u64,
-    pub flag_bv: u32,
-}
-
-pub fn record(args: Args) -> io::Result<()> {
-    let duration = args.flag_time.map(Duration::from_secs);
+pub fn record(likes: Likes) -> io::Result<()> {
+    let duration = likes.duration.map(Duration::from_secs);
 
     // Get the display.
 
@@ -67,7 +63,7 @@ pub fn record(args: Args) -> io::Result<()> {
         OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(&args.arg_path)
+            .open(&likes.destiny)
     } {
         Ok(file) => file,
         Err(ref e) if e.kind() == io::ErrorKind::AlreadyExists => {
@@ -77,7 +73,7 @@ pub fn record(args: Args) -> io::Result<()> {
                     break b;
                 }
             } {
-                File::create(&args.arg_path)?
+                File::create(&likes.destiny)?
             } else {
                 return Ok(());
             }
@@ -99,7 +95,7 @@ pub fn record(args: Args) -> io::Result<()> {
         width: width,
         height: height,
         timebase: [1, 1000],
-        bitrate: args.flag_bv,
+        bitrate: likes.bitrate,
         codec: vpx_codec,
     })
     .unwrap();
@@ -118,7 +114,7 @@ pub fn record(args: Args) -> io::Result<()> {
         }
     });
 
-    let spf = Duration::from_nanos(1_000_000_000 / args.flag_fps);
+    let spf = Duration::from_nanos(1_000_000_000 / likes.frames_ps);
     let mut yuv = Vec::new();
 
     while !stop.load(Ordering::Acquire) {

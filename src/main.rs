@@ -13,13 +13,17 @@ fn displays() -> std::io::Result<()> {
 }
 
 fn record() -> std::io::Result<()> {
-    let args = recorder::Args {
-        arg_path: "test.webm".into(),
-        flag_time: None,
-        flag_fps: 30,
-        flag_bv: 5000,
+    let likes = recorder::Likes {
+        display: 0,
+        resolution: None,
+        sensitivity: 0.001,
+        resilience: 27,
+        duration: None,
+        frames_ps: 30,
+        bitrate: 5000,
+        destiny: "test.webm".into(),
     };
-    recorder::record(args)
+    recorder::record(likes)
 }
 
 fn main() -> std::io::Result<()> {
