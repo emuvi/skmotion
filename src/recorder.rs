@@ -123,10 +123,17 @@ fn record(likes: Likes) -> std::io::Result<()> {
         match capturer.frame() {
             Ok(frame) => {
                 let ms = time.as_secs() * 1000 + time.subsec_millis() as u64;
-                crate::helper::compare(&frame, &last);
-                crate::helper::argb_to_i420(width as usize, height as usize, &frame, &mut yuv);
-                for frame in vpx.encode(ms as i64, &yuv).unwrap() {
-                    vt.add_frame(frame.data, frame.pts as u64 * 1_000_000, frame.key);
+                let diff = crate::helper::compare(&frame, &last);
+                println!("{}", diff);
+                if diff > likes.sensitivity {
+                    last.clear();
+                    for f in frame.iter() {
+                        last.push(*f);
+                    }
+                    crate::helper::argb_to_i420(width as usize, height as usize, &frame, &mut yuv);
+                    for frame in vpx.encode(ms as i64, &yuv).unwrap() {
+                        vt.add_frame(frame.data, frame.pts as u64 * 1_000_000, frame.key);
+                    }
                 }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {

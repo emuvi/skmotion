@@ -1,10 +1,14 @@
-pub fn compare(frame: &[u8], last: &Vec<u8>) {
+pub fn compare(frame: &[u8], last: &Vec<u8>) -> f64 {
+    if last.is_empty() {
+        return 1.0;
+    }
     let mut diff = 0;
     for (a, b) in frame.iter().zip(last.iter()) {
         if a != b {
             diff += 1;
         }
     }
+    diff as f64 / last.len() as f64
 }
 
 pub fn argb_to_i420(width: usize, height: usize, src: &[u8], dest: &mut Vec<u8>) {
