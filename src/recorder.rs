@@ -24,31 +24,8 @@ pub fn record(likes: Likes) -> io::Result<()> {
     let duration = likes.duration.map(Duration::from_secs);
 
     // Get the display.
-
     let displays = Display::all()?;
-
-    let i = if displays.is_empty() {
-        eprintln!("No displays found.");
-        return Ok(());
-    } else if displays.len() == 1 {
-        0
-    } else {
-        let names: Vec<_> = displays
-            .iter()
-            .enumerate()
-            .map(
-                |(i, display)| format!("Display {} [{}x{}]", i, display.width(), display.height(),),
-            )
-            .collect();
-
-        quest::ask("Which display?\n");
-        let i = quest::choose(Default::default(), &names)?;
-        println!();
-
-        i
-    };
-
-    let display = displays.into_iter().nth(i).unwrap();
+    let display = displays.into_iter().nth(likes.display).unwrap();
 
     // Setup the recorder.
 
