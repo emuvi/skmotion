@@ -9,17 +9,34 @@ use webm::mux;
 use webm::mux::Track;
 
 #[derive(Debug)]
-pub struct Likes {
-    pub display: usize,
-    pub duration: Option<u64>,
-    pub sensitivity: f64,
-    pub resilience: u32,
-    pub frames_ps: u64,
-    pub bitrate: u32,
-    pub destiny: PathBuf,
+struct Likes {
+    display: usize,
+    duration: Option<u64>,
+    sensitivity: f64,
+    resilience: u32,
+    frames_ps: u64,
+    bitrate: u32,
+    destiny: PathBuf,
 }
 
-pub fn record(likes: Likes) -> std::io::Result<()> {
+pub fn start(
+    display: usize,
+    duration: Option<u64>,
+    sensitivity: f64,
+    destiny: &str,
+) -> std::io::Result<()> {
+    record(Likes {
+        display,
+        duration,
+        sensitivity,
+        resilience: 27,
+        frames_ps: 30,
+        bitrate: 5000,
+        destiny: destiny.into(),
+    })
+}
+
+fn record(likes: Likes) -> std::io::Result<()> {
     let duration = likes.duration.map(Duration::from_secs);
 
     // Get the display.

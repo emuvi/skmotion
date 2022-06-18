@@ -17,7 +17,7 @@ pub fn parse() -> ArgMatches {
 			Arg::new("screen")
 				.short('s')
 				.long("screen")
-				.value_name("NUMBER")
+				.value_name("INDEX")
 				.takes_value(true)
 				.required(false)
 				.help("The index of the display to be recorded."),
@@ -30,6 +30,15 @@ pub fn parse() -> ArgMatches {
 				.takes_value(true)
 				.required(false)
 				.help("For how many seconds it will be recorded."),
+		)
+		.arg(
+			Arg::new("sensitivity")
+				.short('n')
+				.long("sensitivity")
+				.value_name("PERCENTAGE")
+				.takes_value(true)
+				.required(false)
+				.help("The percentage from 0.0 to 1.0 of changes on a display to consider as motion."),
 		)
 		.arg(
 			Arg::new("record")
