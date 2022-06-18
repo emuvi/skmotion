@@ -1,7 +1,7 @@
 use scrap::Display;
 
 mod clip;
-mod convert;
+mod helper;
 mod recorder;
 
 fn displays() -> std::io::Result<()> {

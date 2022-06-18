@@ -106,6 +106,7 @@ fn record(likes: Likes) -> std::io::Result<()> {
     });
 
     let spf = Duration::from_nanos(1_000_000_000 / likes.frames_ps);
+    let mut last = Vec::new();
     let mut yuv = Vec::new();
 
     while !stop.load(Ordering::Acquire) {
@@ -122,9 +123,8 @@ fn record(likes: Likes) -> std::io::Result<()> {
         match capturer.frame() {
             Ok(frame) => {
                 let ms = time.as_secs() * 1000 + time.subsec_millis() as u64;
-
-                crate::convert::argb_to_i420(width as usize, height as usize, &frame, &mut yuv);
-
+                crate::helper::compare(&frame, &last);
+                crate::helper::argb_to_i420(width as usize, height as usize, &frame, &mut yuv);
                 for frame in vpx.encode(ms as i64, &yuv).unwrap() {
                     vt.add_frame(frame.data, frame.pts as u64 * 1_000_000, frame.key);
                 }
@@ -133,7 +133,7 @@ fn record(likes: Likes) -> std::io::Result<()> {
                 // Wait.
             }
             Err(e) => {
-                println!("{}", e);
+                eprintln!("{}", e);
                 break;
             }
         }

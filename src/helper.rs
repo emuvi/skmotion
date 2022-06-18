@@ -1,3 +1,12 @@
+pub fn compare(frame: &[u8], last: &Vec<u8>) {
+    let mut diff = 0;
+    for (a, b) in frame.iter().zip(last.iter()) {
+        if a != b {
+            diff += 1;
+        }
+    }
+}
+
 pub fn argb_to_i420(width: usize, height: usize, src: &[u8], dest: &mut Vec<u8>) {
     let stride = src.len() / height;
 
