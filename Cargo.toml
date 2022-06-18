@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eframe = "0.18"
 quest = "0.3"
 serde = { version = "1", features = ["derive"] }
 scrap = "0.5"

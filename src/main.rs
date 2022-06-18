@@ -1,8 +1,7 @@
 mod convert;
 mod recorder;
-mod userface;
 
-fn simple_record() -> std::io::Result<()> {
+fn main() -> std::io::Result<()> {
     let args = recorder::Args {
         arg_path: "test.webm".into(),
         flag_codec: recorder::Codec::Vp9,
@@ -12,8 +11,4 @@ fn simple_record() -> std::io::Result<()> {
         flag_ba: 5,
     };
     recorder::record(args)
-}
-
-fn main() {
-    userface::show();
 }
