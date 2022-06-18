@@ -41,6 +41,15 @@ pub fn parse() -> ArgMatches {
 				.help("The percentage from 0.0 to 1.0 of changes on a display to consider as motion."),
 		)
 		.arg(
+			Arg::new("resilience")
+				.short('i')
+				.long("resilience")
+				.value_name("FRAMES")
+				.takes_value(true)
+				.required(false)
+				.help("How many frames to record even without motion."),
+		)
+		.arg(
 			Arg::new("record")
 				.short('r')
 				.long("record")

@@ -29,11 +29,15 @@ fn main() -> std::io::Result<()> {
     if let Some(sensitivity_arg) = args.value_of("sensitivity") {
         sensitivity = sensitivity_arg.parse::<f64>().unwrap();
     }
+    let mut resilience: u32 = 30;
+    if let Some(resilience_arg) = args.value_of("resilience") {
+        resilience = resilience_arg.parse::<u32>().unwrap();
+    }
     if args.is_present("record") {
         let destiny = args
             .value_of("record")
             .expect("Could not parse the record PATH argument.");
-        return recorder::start(display, duration, sensitivity, destiny);
+        return recorder::start(display, duration, sensitivity, resilience, destiny);
     }
     Ok(())
 }

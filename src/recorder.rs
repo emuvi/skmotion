@@ -23,13 +23,14 @@ pub fn start(
     display: usize,
     duration: Option<u64>,
     sensitivity: f64,
+    resilience: u32,
     destiny: &str,
 ) -> std::io::Result<()> {
     record(Likes {
         display,
         duration,
         sensitivity,
-        resilience: 27,
+        resilience,
         frames_ps: 30,
         bitrate: 5000,
         destiny: destiny.into(),
