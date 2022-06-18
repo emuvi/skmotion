@@ -130,6 +130,8 @@ fn record(like: Like) -> std::io::Result<()> {
     let mut last_saved = Vec::new();
     let mut yuv = Vec::new();
 
+    let mut resilient = like.resilience;
+
     while !stop.load(Ordering::Acquire) {
         if pause.load(Ordering::Acquire) {
             std::thread::sleep(Duration::from_millis(10));
@@ -143,16 +145,25 @@ fn record(like: Like) -> std::io::Result<()> {
 
         match capturer.frame() {
             Ok(frame) => {
-                let ms = time.as_secs() * 1000 + time.subsec_millis() as u64;
                 let diff = crate::helper::compare(&frame, &last_saved);
                 last_diff.store(diff, Ordering::Release);
-                if diff > like.sensitivity {
+                let mut to_save = diff > like.sensitivity;
+                if to_save {
+                    resilient = like.resilience;
                     last_saved.clear();
-                    for f in frame.iter() {
-                        last_saved.push(*f);
+                    for part in frame.iter() {
+                        last_saved.push(*part);
                     }
+                } else {
+                    if resilient > 0 {
+                        resilient -= 1;
+                        to_save = true;
+                    }
+                }
+                if to_save {
+                    let ms = time.as_secs() * 1000 + time.subsec_millis() as u64;
                     crate::helper::argb_to_i420(width as usize, height as usize, &frame, &mut yuv);
-                    for frame in vpx.encode(ms as i64, &yuv).unwrap() {
+                    for frame in vpx.encode(0 as i64, &yuv).unwrap() {
                         vt.add_frame(frame.data, frame.pts as u64 * 1_000_000, frame.key);
                     }
                     frames_saved.fetch_add(1, Ordering::AcqRel);
