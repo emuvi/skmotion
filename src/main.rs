@@ -12,7 +12,7 @@ fn displays() -> std::io::Result<()> {
     Ok(())
 }
 
-fn record() -> std::io::Result<()> {
+fn record(destiny: &str) -> std::io::Result<()> {
     let likes = recorder::Likes {
         display: 0,
         resolution: None,
@@ -21,7 +21,7 @@ fn record() -> std::io::Result<()> {
         duration: None,
         frames_ps: 30,
         bitrate: 5000,
-        destiny: "test.webm".into(),
+        destiny: destiny.into(),
     };
     recorder::record(likes)
 }
@@ -30,6 +30,12 @@ fn main() -> std::io::Result<()> {
     let args = clip::parse();
     if args.is_present("displays") {
         return displays();
+    }
+    if args.is_present("record") {
+        let destiny = args
+            .value_of("record")
+            .expect("Could not parse the record PATH argument.");
+        return record(destiny);
     }
     Ok(())
 }

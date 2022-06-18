@@ -1,5 +1,4 @@
 use scrap::{Capturer, Display};
-use std::fmt;
 use std::fs::{File, OpenOptions};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};

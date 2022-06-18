@@ -13,5 +13,14 @@ pub fn parse() -> ArgMatches {
 				.required(false)
 				.help("Prints a list of all connected displays."),
 		)
+		.arg(
+			Arg::new("record")
+				.short('r')
+				.long("record")
+				.value_name("PATH")
+				.takes_value(true)
+				.required(false)
+				.help("Records the motions of the display on the PATH."),
+		)
 		.get_matches()
 }
