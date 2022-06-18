@@ -14,6 +14,15 @@ pub fn parse() -> ArgMatches {
 				.help("Prints a list of all connected displays."),
 		)
 		.arg(
+			Arg::new("screen")
+				.short('s')
+				.long("screen")
+				.value_name("NUMBER")
+				.takes_value(true)
+				.required(false)
+				.help("Sets the display index to be recorded."),
+		)
+		.arg(
 			Arg::new("record")
 				.short('r')
 				.long("record")
