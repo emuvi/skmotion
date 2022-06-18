@@ -20,17 +20,9 @@ pub struct ToRec {
 #[derive(Debug, serde::Deserialize)]
 pub struct Args {
     pub arg_path: PathBuf,
-    pub flag_codec: Codec,
     pub flag_time: Option<u64>,
     pub flag_fps: u64,
     pub flag_bv: u32,
-    pub flag_ba: u32,
-}
-
-#[derive(Debug, serde::Deserialize)]
-pub enum Codec {
-    Vp8,
-    Vp9,
 }
 
 pub fn record(args: Args) -> io::Result<()> {
@@ -41,7 +33,7 @@ pub fn record(args: Args) -> io::Result<()> {
     let displays = Display::all()?;
 
     let i = if displays.is_empty() {
-        error("No displays found.");
+        eprintln!("No displays found.");
         return Ok(());
     } else if displays.len() == 1 {
         0
@@ -96,10 +88,8 @@ pub fn record(args: Args) -> io::Result<()> {
     let mut webm =
         mux::Segment::new(mux::Writer::new(out)).expect("Could not initialize the multiplexer.");
 
-    let (vpx_codec, mux_codec) = match args.flag_codec {
-        Codec::Vp8 => (vpx_encode::VideoCodecId::VP8, mux::VideoCodecId::VP8),
-        Codec::Vp9 => (vpx_encode::VideoCodecId::VP9, mux::VideoCodecId::VP9),
-    };
+    let vpx_codec = vpx_encode::VideoCodecId::VP9;
+    let mux_codec = mux::VideoCodecId::VP9;
 
     let mut vt = webm.add_video_track(width, height, None, mux_codec);
 
@@ -174,8 +164,4 @@ pub fn record(args: Args) -> io::Result<()> {
     let _ = webm.finalize(None);
 
     Ok(())
-}
-
-fn error<S: fmt::Display>(s: S) {
-    println!("\u{1B}[1;31m{}\u{1B}[0m", s);
 }
