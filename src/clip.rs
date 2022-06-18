@@ -20,7 +20,16 @@ pub fn parse() -> ArgMatches {
 				.value_name("NUMBER")
 				.takes_value(true)
 				.required(false)
-				.help("Sets the display index to be recorded."),
+				.help("The index of the display to be recorded."),
+		)
+		.arg(
+			Arg::new("extent")
+				.short('e')
+				.long("extent")
+				.value_name("SECONDS")
+				.takes_value(true)
+				.required(false)
+				.help("For how many seconds it will be recorded."),
 		)
 		.arg(
 			Arg::new("record")
@@ -29,7 +38,7 @@ pub fn parse() -> ArgMatches {
 				.value_name("PATH")
 				.takes_value(true)
 				.required(false)
-				.help("Records the motions of the display on the PATH."),
+				.help("Records the motions of a display on the PATH."),
 		)
 		.get_matches()
 }

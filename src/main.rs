@@ -12,12 +12,12 @@ fn displays() -> std::io::Result<()> {
     Ok(())
 }
 
-fn record(display: usize, destiny: &str) -> std::io::Result<()> {
+fn record(display: usize, duration: Option<u64>, destiny: &str) -> std::io::Result<()> {
     let likes = recorder::Likes {
         display,
         sensitivity: 0.001,
         resilience: 27,
-        duration: None,
+        duration,
         frames_ps: 30,
         bitrate: 5000,
         destiny: destiny.into(),
@@ -31,14 +31,18 @@ fn main() -> std::io::Result<()> {
         return displays();
     }
     let mut display = 0 as usize;
-    if let Some(screen_arg) = args.value_of("screen") {
-        display = screen_arg.parse::<usize>().unwrap();
+    if let Some(screen) = args.value_of("screen") {
+        display = screen.parse::<usize>().unwrap();
+    }
+    let mut duration: Option<u64> = None;
+    if let Some(extent) = args.value_of("extent") {
+        duration = Some(extent.parse::<u64>().unwrap());
     }
     if args.is_present("record") {
         let destiny = args
             .value_of("record")
             .expect("Could not parse the record PATH argument.");
-        return record(display, destiny);
+        return record(display, duration, destiny);
     }
     Ok(())
 }
