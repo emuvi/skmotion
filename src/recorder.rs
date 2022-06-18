@@ -1,12 +1,15 @@
 use scrap::{Capturer, Display};
+use webm::mux;
+use webm::mux::Track;
+
 use std::fs::OpenOptions;
 use std::io::BufRead;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use webm::mux;
-use webm::mux::Track;
+
+use crate::helper::AtomicF64;
 
 #[derive(Debug)]
 struct Likes {
@@ -81,11 +84,17 @@ fn record(likes: Likes) -> std::io::Result<()> {
 
     // Start recording.
 
+    let last_diff = Arc::new(AtomicF64::new(0.0));
+    let frames_saved = Arc::new(AtomicU64::new(0));
+    let frames_skipped = Arc::new(AtomicU64::new(0));
     let start = Instant::now();
     let pause = Arc::new(AtomicBool::new(false));
     let stop = Arc::new(AtomicBool::new(false));
 
     std::thread::spawn({
+        let last_diff = last_diff.clone();
+        let frames_saved = frames_saved.clone();
+        let frames_skipped = frames_skipped.clone();
         let pause = pause.clone();
         let stop = stop.clone();
         let stdin = std::io::stdin();
@@ -93,12 +102,21 @@ fn record(likes: Likes) -> std::io::Result<()> {
             for line in stdin.lock().lines() {
                 let command = line.unwrap();
                 let command = command.trim();
-                if command == "pause" {
+                if command == "diff" {
+                    println!("{}", last_diff.load(Ordering::Acquire));
+                } else if command == "saved" {
+                    println!("{}", frames_saved.load(Ordering::Acquire));
+                } else if command == "skipped" {
+                    println!("{}", frames_skipped.load(Ordering::Acquire));
+                } else if command == "pause" {
                     pause.store(true, Ordering::Release);
+                    println!("Paused");
                 } else if command == "continue" {
                     pause.store(false, Ordering::Release);
+                    println!("Continued");
                 } else if command == "stop" {
                     stop.store(true, Ordering::Release);
+                    println!("Stopped");
                     break;
                 }
             }
@@ -106,7 +124,7 @@ fn record(likes: Likes) -> std::io::Result<()> {
     });
 
     let spf = Duration::from_nanos(1_000_000_000 / likes.frames_ps);
-    let mut last = Vec::new();
+    let mut last_saved = Vec::new();
     let mut yuv = Vec::new();
 
     while !stop.load(Ordering::Acquire) {
@@ -123,17 +141,20 @@ fn record(likes: Likes) -> std::io::Result<()> {
         match capturer.frame() {
             Ok(frame) => {
                 let ms = time.as_secs() * 1000 + time.subsec_millis() as u64;
-                let diff = crate::helper::compare(&frame, &last);
-                println!("{}", diff);
+                let diff = crate::helper::compare(&frame, &last_saved);
+                last_diff.store(diff, Ordering::Release);
                 if diff > likes.sensitivity {
-                    last.clear();
+                    last_saved.clear();
                     for f in frame.iter() {
-                        last.push(*f);
+                        last_saved.push(*f);
                     }
                     crate::helper::argb_to_i420(width as usize, height as usize, &frame, &mut yuv);
                     for frame in vpx.encode(ms as i64, &yuv).unwrap() {
                         vt.add_frame(frame.data, frame.pts as u64 * 1_000_000, frame.key);
                     }
+                    frames_saved.fetch_add(1, Ordering::AcqRel);
+                } else {
+                    frames_skipped.fetch_add(1, Ordering::AcqRel);
                 }
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
