@@ -1,39 +1,18 @@
-use std::sync::atomic::{AtomicU64, Ordering};
-
-pub struct AtomicF64 {
-    storage: AtomicU64,
-}
-
-impl AtomicF64 {
-    pub fn new(value: f64) -> Self {
-        let as_u64 = value.to_bits();
-        Self {
-            storage: AtomicU64::new(as_u64),
-        }
-    }
-
-    pub fn store(&self, value: f64, ordering: Ordering) {
-        let as_u64 = value.to_bits();
-        self.storage.store(as_u64, ordering)
-    }
-
-    pub fn load(&self, ordering: Ordering) -> f64 {
-        let as_u64 = self.storage.load(ordering);
-        f64::from_bits(as_u64)
-    }
-}
-
-pub fn compare(frame: &[u8], last: &Vec<u8>) -> f64 {
+pub fn is_different(frame: &[u8], last: &Vec<u8>, sensitivity: f64) -> bool {
     if last.is_empty() {
-        return 1.0;
+        return true;
     }
+    let acceptable = (sensitivity * frame.len() as f64).floor() as usize;
     let mut diff = 0;
     for (a, b) in frame.iter().zip(last.iter()) {
         if a != b {
             diff += 1;
+            if diff > acceptable {
+                return true;
+            }
         }
     }
-    diff as f64 / last.len() as f64
+    false
 }
 
 pub fn argb_to_i420(width: usize, height: usize, src: &[u8], dest: &mut Vec<u8>) {

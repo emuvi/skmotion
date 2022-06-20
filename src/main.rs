@@ -37,7 +37,7 @@ fn main() -> std::io::Result<()> {
     if let Some(frames_ps_arg) = args.value_of("frames_ps") {
         frames_ps = frames_ps_arg.parse::<u64>().unwrap();
     }
-    let mut bitrate: u32 = 7200;
+    let mut bitrate: u32 = 5000;
     if let Some(bitrate_arg) = args.value_of("bitrate") {
         bitrate = bitrate_arg.parse::<u32>().unwrap();
     }
